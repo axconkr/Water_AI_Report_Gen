@@ -1,0 +1,239 @@
+// Prisma schema for APAS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  name            String
+  company         String?
+  phone           String?
+  avatarUrl       String?   @map("avatar_url")
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  role            String    @default("user")
+  subscriptionTier String   @default("free") @map("subscription_tier")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  projects        Project[]
+  documents       Document[]
+  conversations   Conversation[]
+  exportRequests  ExportRequest[]
+  projectHistory  ProjectHistory[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Project {
+  id                  String    @id @default(uuid())
+  userId              String    @map("user_id")
+  name                String
+  description         String?
+  clientOrganization  String?   @map("client_organization")
+  projectType         String?   @map("project_type")
+  status              String    @default("draft")
+  contractAmount      Decimal?  @map("contract_amount") @db.Decimal(15, 2)
+  startDate           DateTime? @map("start_date") @db.Date
+  endDate             DateTime? @map("end_date") @db.Date
+  tags                String[]
+  metadata            Json?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents           Document[]
+  tableOfContents     TableOfContents?
+  generatedContents   GeneratedContent[]
+  conversations       Conversation[]
+  exportRequests      ExportRequest[]
+  projectHistory      ProjectHistory[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([tags])
+  @@map("projects")
+}
+
+model Document {
+  id              String    @id @default(uuid())
+  projectId       String    @map("project_id")
+  userId          String    @map("user_id")
+  fileName        String    @map("file_name")
+  fileType        String    @map("file_type")
+  fileSize        Int       @map("file_size")
+  fileUrl         String    @map("file_url")
+  documentType    String?   @map("document_type")
+  status          String    @default("uploading")
+  extractedText   String?   @map("extracted_text")
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis        DocumentAnalysis?
+
+  @@index([projectId])
+  @@index([status])
+  @@map("documents")
+}
+
+model DocumentAnalysis {
+  id              String    @id @default(uuid())
+  documentId      String    @unique @map("document_id")
+  analysisType    String?   @map("analysis_type")
+  extractedInfo   Json?     @map("extracted_info")
+  keywords        String[]
+  confidenceScore Decimal?  @map("confidence_score") @db.Decimal(3, 2)
+  aiProvider      String?   @map("ai_provider")
+  tokensUsed      Int?      @map("tokens_used")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  document        Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("document_analyses")
+}
+
+model TableOfContents {
+  id          String    @id @default(uuid())
+  projectId   String    @unique @map("project_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sections    Section[]
+
+  @@index([projectId])
+  @@map("table_of_contents")
+}
+
+model Section {
+  id          String    @id @default(uuid())
+  tocId       String    @map("toc_id")
+  parentId    String?   @map("parent_id")
+  title       String
+  level       Int
+  orderIndex  Int       @map("order_index")
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  toc         TableOfContents @relation(fields: [tocId], references: [id], onDelete: Cascade)
+  parent      Section?  @relation("SectionToSection", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Section[] @relation("SectionToSection")
+  contents    GeneratedContent[]
+  conversations Conversation[]
+
+  @@index([tocId])
+  @@index([parentId])
+  @@index([tocId, orderIndex])
+  @@map("sections")
+}
+
+model GeneratedContent {
+  id              String    @id @default(uuid())
+  sectionId       String    @map("section_id")
+  projectId       String    @map("project_id")
+  content         String
+  legalReferences Json?     @map("legal_references")
+  sources         Json?
+  aiProvider      String?   @map("ai_provider")
+  tokensUsed      Int?      @map("tokens_used")
+  generationTime  Int?      @map("generation_time")
+  version         Int       @default(1)
+  status          String    @default("completed")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  section         Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId])
+  @@index([projectId])
+  @@map("generated_contents")
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  userId      String    @map("user_id")
+  sectionId   String?   @map("section_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section     Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  messages    Message[]
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id              String    @id @default(uuid())
+  conversationId  String    @map("conversation_id")
+  role            String
+  content         String
+  aiProvider      String?   @map("ai_provider")
+  tokensUsed      Int?      @map("tokens_used")
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model ExportRequest {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  userId      String    @map("user_id")
+  format      String
+  template    String?
+  options     Json?
+  status      String    @default("pending")
+  fileUrl     String?   @map("file_url")
+  errorMessage String?  @map("error_message")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@map("export_requests")
+}
+
+model ProjectHistory {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  userId      String    @map("user_id")
+  action      String
+  targetType  String?   @map("target_type")
+  targetId    String?   @map("target_id")
+  changes     Json?
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt(sort: Desc)])
+  @@map("project_history")
+}
