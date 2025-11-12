@@ -142,8 +142,9 @@ model Section {
 
 model GeneratedContent {
   id              String    @id @default(uuid())
-  sectionId       String    @map("section_id")
+  sectionId       String?   @map("section_id")
   projectId       String    @map("project_id")
+  title           String?
   content         String
   legalReferences Json?     @map("legal_references")
   sources         Json?
@@ -154,7 +155,7 @@ model GeneratedContent {
   status          String    @default("completed")
   createdAt       DateTime  @default(now()) @map("created_at")
 
-  section         Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  section         Section?  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([sectionId])

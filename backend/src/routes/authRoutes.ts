@@ -1,5 +1,5 @@
 import express from 'express'
-import { register, login, refresh, getProfile } from '../controllers/authController'
+import { register, login, refresh, getProfile, forgotPassword } from '../controllers/authController'
 import { authenticate } from '../middlewares/auth'
 
 const router = express.Router()
@@ -8,6 +8,7 @@ const router = express.Router()
 router.post('/register', register)
 router.post('/login', login)
 router.post('/refresh', refresh)
+router.post('/forgot-password', forgotPassword)
 
 // Protected routes
 router.get('/profile', authenticate, getProfile)

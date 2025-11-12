@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import path from 'path'
 import apiRoutes from './routes'
 import { errorHandler } from './middlewares/errorHandler'
 
@@ -19,6 +20,9 @@ app.use(
 )
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // Health check route
 app.get('/health', (_req: Request, res: Response) => {

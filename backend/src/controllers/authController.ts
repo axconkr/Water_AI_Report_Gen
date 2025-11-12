@@ -322,3 +322,47 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
     })
   }
 }
+
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: '이메일을 입력해주세요',
+        },
+      })
+      return
+    }
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    // Always return success to prevent email enumeration
+    // In production, you would send an actual email here
+    res.status(200).json({
+      success: true,
+      message: '비밀번호 재설정 링크가 이메일로 전송되었습니다',
+    })
+
+    // TODO: In production, implement:
+    // 1. Generate password reset token
+    // 2. Store token with expiration in database
+    // 3. Send email with reset link
+    // 4. Create reset password endpoint
+  } catch (error) {
+    console.error('Forgot password error:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '비밀번호 재설정 요청 처리 중 오류가 발생했습니다',
+      },
+    })
+  }
+}
