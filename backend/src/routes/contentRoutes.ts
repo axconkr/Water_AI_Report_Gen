@@ -5,6 +5,7 @@ import {
   getGeneratedContents,
   chat,
   downloadContent,
+  updateContent,
 } from '../controllers/contentController'
 import { authenticate } from '../middlewares/auth'
 
@@ -16,5 +17,6 @@ router.post('/:contentId/improve', authenticate, improveGeneratedContent)
 router.get('/project/:projectId', authenticate, getGeneratedContents)
 router.post('/chat', authenticate, chat)
 router.get('/:contentId/download', authenticate, downloadContent)
+router.patch('/:contentId', authenticate, updateContent)
 
 export default router

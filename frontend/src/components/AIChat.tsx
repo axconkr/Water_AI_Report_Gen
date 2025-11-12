@@ -9,6 +9,12 @@ interface Message {
   timestamp: Date
 }
 
+interface GeneratedContent {
+  id: string
+  title: string
+  content: string
+}
+
 interface AIChatProps {
   projectId: string
 }
@@ -19,6 +25,9 @@ export default function AIChat({ projectId }: AIChatProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [existingContents, setExistingContents] = useState<GeneratedContent[]>([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedMessage, setSelectedMessage] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -79,6 +88,57 @@ export default function AIChat({ projectId }: AIChatProps) {
     setMessages([])
     setConversationId(null)
     setError('')
+  }
+
+  const fetchExistingContents = async () => {
+    try {
+      const response = await axios.get(`/content/project/${projectId}`)
+      setExistingContents(response.data.data.contents || [])
+    } catch (err) {
+      console.error('Failed to fetch existing contents:', err)
+    }
+  }
+
+  const handleDownloadMessage = (content: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `AI_응답_${new Date().toISOString().slice(0, 10)}.txt`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content)
+    alert('클립보드에 복사되었습니다')
+  }
+
+  const handleOpenAddModal = async (content: string) => {
+    setSelectedMessage(content)
+    await fetchExistingContents()
+    setShowAddModal(true)
+  }
+
+  const handleAddToExistingContent = async (contentId: string) => {
+    try {
+      const existingContent = existingContents.find((c) => c.id === contentId)
+      if (!existingContent) return
+
+      const updatedContent = existingContent.content + '\n\n' + selectedMessage
+
+      await axios.patch(`/content/${contentId}`, {
+        content: updatedContent,
+      })
+
+      alert('기존 초안에 추가되었습니다')
+      setShowAddModal(false)
+      setSelectedMessage('')
+    } catch (err: any) {
+      alert(err.response?.data?.error?.message || '초안 추가 중 오류가 발생했습니다')
+    }
   }
 
   return (
@@ -162,24 +222,92 @@ export default function AIChat({ projectId }: AIChatProps) {
               }`}
             >
               <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-              <p
-                className={`mt-2 text-xs flex items-center ${
-                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                }`}
-              >
-                <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {message.timestamp.toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p
+                  className={`text-xs flex items-center ${
+                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  }`}
+                >
+                  <svg
+                    className="h-3 w-3 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {message.timestamp.toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+                {message.role === 'assistant' && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleCopyMessage(message.content)}
+                      className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                      title="복사"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDownloadMessage(message.content)}
+                      className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                      title="다운로드"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleOpenAddModal(message.content)}
+                      className="text-xs text-gray-500 hover:text-gray-700 flex items-center"
+                      title="초안에 추가"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -276,6 +404,72 @@ export default function AIChat({ projectId }: AIChatProps) {
           <span className="mx-1">줄바꿈</span>
         </p>
       </div>
+
+      {/* Add to Existing Content Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">기존 초안에 추가</h3>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false)
+                    setSelectedMessage('')
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 overflow-y-auto max-h-[60vh]">
+              {existingContents.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-600">생성된 초안이 없습니다</p>
+                  <p className="text-xs text-gray-500 mt-2">먼저 초안을 생성해주세요</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {existingContents.map((content) => (
+                    <div
+                      key={content.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-primary hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => handleAddToExistingContent(content.id)}
+                    >
+                      <h4 className="font-semibold text-gray-900 mb-2">{content.title}</h4>
+                      <p className="text-sm text-gray-600 line-clamp-3">{content.content}</p>
+                      <button className="mt-3 text-xs text-primary hover:text-primary-600 font-medium">
+                        이 초안에 추가 →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowAddModal(false)
+                  setSelectedMessage('')
+                }}
+                className="w-full btn-secondary"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

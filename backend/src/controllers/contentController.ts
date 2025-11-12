@@ -331,7 +331,7 @@ export const chat = async (req: Request, res: Response): Promise<void> => {
       conversation = await prisma.conversation.create({
         data: {
           projectId,
-          title: message.substring(0, 50),
+          userId: req.user.id,
         },
         include: {
           messages: true,
@@ -517,6 +517,83 @@ export const downloadContent = async (req: Request, res: Response): Promise<void
       error: {
         code: 'INTERNAL_SERVER_ERROR',
         message: '문서 다운로드 중 오류가 발생했습니다',
+      },
+    })
+  }
+}
+
+export const updateContent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '인증이 필요합니다',
+        },
+      })
+      return
+    }
+
+    const { contentId } = req.params
+    const { content } = req.body
+
+    if (!content) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: '내용이 필요합니다',
+        },
+      })
+      return
+    }
+
+    // Verify content exists and user owns the project
+    const existingContent = await prisma.generatedContent.findFirst({
+      where: {
+        id: contentId,
+        project: {
+          userId: req.user.id,
+        },
+      },
+    })
+
+    if (!existingContent) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: '초안을 찾을 수 없습니다',
+        },
+      })
+      return
+    }
+
+    // Update content
+    const updatedContent = await prisma.generatedContent.update({
+      where: {
+        id: contentId,
+      },
+      data: {
+        content,
+        version: existingContent.version + 1,
+      },
+    })
+
+    res.json({
+      success: true,
+      data: {
+        content: updatedContent,
+      },
+    })
+  } catch (error) {
+    console.error('Update content error:', error)
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: '초안 업데이트 중 오류가 발생했습니다',
       },
     })
   }
