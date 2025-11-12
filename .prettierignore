@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Cache
+.cache/
+
+# Misc
+.DS_Store
+*.pem
+
+# Logs
+logs/
+*.log
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Prisma generated
+prisma/migrations/
