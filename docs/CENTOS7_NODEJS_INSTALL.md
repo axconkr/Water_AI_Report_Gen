@@ -9,24 +9,28 @@ npm ERR! Prisma only supports Node.js >= 18.18.
 npm ERR! Please upgrade your Node.js version.
 ```
 
-### 문제 2: GLIBC 버전 불일치 (Node.js 20.x 설치 시)
+### 문제 2: GLIBC 버전 불일치 (NodeSource 저장소)
 
 ```
 Error: Package: 2:nodejs-20.19.5-1nodesource.x86_64 (nodesource-nodejs)
        Requires: libc.so.6(GLIBC_2.28)(64bit)
-Error: Package: 2:nodejs-20.19.5-1nodesource.x86_64 (nodesource-nodejs)
+Error: Package: 2:nodejs-18.20.8-1nodesource.x86_64 (nodesource-nodejs)
        Requires: libm.so.6(GLIBC_2.27)(64bit)
 ```
 
-**원인**: CentOS 7은 GLIBC 2.17을 사용하지만, Node.js 20.x는 GLIBC 2.28 이상이 필요합니다.
+**원인**:
 
-**해결책**: CentOS 7과 호환되는 **Node.js 18.x LTS**를 설치합니다 (Prisma 요구사항 충족).
+- CentOS 7은 **GLIBC 2.17**을 사용
+- NodeSource의 Node.js 18.x는 **GLIBC 2.27** 필요
+- NodeSource의 Node.js 20.x는 **GLIBC 2.28** 필요
+
+**해결책**: **NVM(Node Version Manager)**을 사용하여 소스에서 빌드된 Node.js 설치 (GLIBC 제한 우회)
 
 ---
 
-## 권장 해결 방법: Node.js 18.x LTS 설치
+## ✅ 권장 해결 방법: NVM 사용 (GLIBC 제한 우회)
 
-### 🚀 빠른 설치 (자동 스크립트)
+### 🚀 빠른 설치 (자동 스크립트) - 권장
 
 ```bash
 cd /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen
@@ -34,10 +38,17 @@ cd /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen
 # 최신 코드 다운로드
 git pull origin main
 
-# Node.js 18.x 설치 스크립트 실행
-chmod +x install-nodejs18-centos7.sh
-./install-nodejs18-centos7.sh
+# NVM 기반 Node.js 설치 스크립트 실행
+chmod +x install-nodejs-nvm-centos7.sh
+./install-nodejs-nvm-centos7.sh
 ```
+
+**장점**:
+
+- ✅ GLIBC 2.17 환경에서 작동
+- ✅ Node.js 18.x, 20.x 모두 설치 가능
+- ✅ 여러 Node.js 버전 관리 가능
+- ✅ 빌드 자동화
 
 ### 📋 수동 설치
 
@@ -75,7 +86,9 @@ node --version   # v18.x.x 출력되어야 함
 npm --version    # 9.x.x 또는 10.x.x 출력되어야 함
 ```
 
-##### 방법 2: NVM (Node Version Manager) 사용
+##### 방법 2: NVM (Node Version Manager) 사용 ⭐ 권장
+
+NVM은 소스에서 Node.js를 빌드하므로 GLIBC 제한을 우회합니다.
 
 ```bash
 # NVM 설치
@@ -84,15 +97,35 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
 # 환경변수 로드
 source ~/.bashrc
 
-# Node.js 18 LTS 설치
+# Node.js 18 LTS 설치 (권장)
 nvm install 18
 nvm use 18
 nvm alias default 18
 
+# 또는 Node.js 20 LTS 설치
+# nvm install 20
+# nvm use 20
+# nvm alias default 20
+
 # 버전 확인
-node --version   # v18.x.x
+node --version   # v18.x.x 또는 v20.x.x
 npm --version    # 9.x.x 또는 10.x.x
+
+# 설치된 버전 목록
+nvm ls
+
+# NVM 주요 명령어
+# nvm install <version>  - Node.js 버전 설치
+# nvm use <version>      - Node.js 버전 전환
+# nvm ls                 - 설치된 버전 목록
+# nvm alias default <v>  - 기본 버전 설정
 ```
+
+**NVM 사용 시 주의사항**:
+
+- 소스 빌드 방식이므로 설치에 5-10분 소요
+- gcc-c++, make, python3 빌드 도구 필요
+- 충분한 디스크 공간 필요 (1-2GB)
 
 #### 3단계: 빌드 도구 설치
 
