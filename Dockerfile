@@ -5,6 +5,9 @@ FROM node:18-alpine AS backend-builder
 
 WORKDIR /app/backend
 
+# Set CI environment to skip husky
+ENV CI=true
+
 # Copy backend package files
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma/
@@ -26,6 +29,9 @@ RUN npm run build
 FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
+
+# Set CI environment to skip husky
+ENV CI=true
 
 # Copy frontend package files
 COPY frontend/package*.json ./
