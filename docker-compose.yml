@@ -1,6 +1,41 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: apas-postgres
+    restart: unless-stopped
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-apas}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-apas_db}
+      - TZ=Asia/Seoul
+
+    volumes:
+      # PostgreSQL 데이터를 호스트 디렉토리에 저장
+      - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/DB:/var/lib/postgresql/data
+
+    networks:
+      - apas-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Main Application
   apas:
     build:
       context: .
@@ -13,10 +48,12 @@ services:
       - "8015:3000"
       - "4000:4000"
 
-    # Volume mapping for document uploads
+    # Volume mapping for document uploads and logs
     volumes:
+      # 업로드 파일을 호스트 디렉토리에 저장
       - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/Document:/app/uploads:rw
-      - apas-logs:/app/logs
+      # 로그 파일을 호스트 디렉토리에 저장
+      - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/Logs:/app/logs:rw
 
     # Environment variables
     environment:
@@ -28,18 +65,18 @@ services:
       - BACKEND_PORT=4000
       - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 
-      # Database (Supabase PostgreSQL)
-      - DATABASE_URL=${DATABASE_URL}
+      # Database (내부 PostgreSQL 사용)
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-apas}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-apas_db}
 
-      # Supabase configuration
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # Supabase configuration (파일 스토리지용, 선택적)
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
 
       # AI Services
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OPENCHAT_API_URL=${OPENCHAT_API_URL}
+      - OPENCHAT_API_URL=${OPENCHAT_API_URL:-}
 
       # JWT Secret
       - JWT_SECRET=${JWT_SECRET}
@@ -58,6 +95,11 @@ services:
     # Environment file
     env_file:
       - .env.production
+
+    # Depends on PostgreSQL
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     # Health check
     healthcheck:
@@ -117,8 +159,6 @@ services:
 
 # Named volumes
 volumes:
-  apas-logs:
-    driver: local
   nginx-cache:
     driver: local
 
