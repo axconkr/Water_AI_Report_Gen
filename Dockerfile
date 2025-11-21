@@ -10,7 +10,7 @@ COPY backend/package*.json ./
 COPY backend/prisma ./prisma/
 
 # Install dependencies
-RUN npm ci --only=production && \
+RUN npm install --only=production && \
     npm install -g prisma
 
 # Copy backend source
@@ -31,7 +31,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy frontend source
 COPY frontend ./
