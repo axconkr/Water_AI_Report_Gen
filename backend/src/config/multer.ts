@@ -26,7 +26,7 @@ const fileFilter = (
         'INVALID_FILE_TYPE',
         '지원하지 않는 파일 형식입니다. PDF 또는 DOCX 파일만 업로드 가능합니다',
         400
-      )
+      ) as any
     )
   }
 }

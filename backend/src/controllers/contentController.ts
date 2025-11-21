@@ -167,9 +167,8 @@ export const improveGeneratedContent = async (req: Request, res: Response): Prom
         sectionId: content.sectionId,
         title: content.title,
         content: improvedText,
-        aiModel: 'claude-3-5-sonnet',
         version: content.version + 1,
-      },
+      } as any,
     })
 
     res.status(201).json({
