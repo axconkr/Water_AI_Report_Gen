@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  apas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apas-application
+    restart: unless-stopped
+
+    # Port mapping - internal 3000 to external 8015
+    ports:
+      - "8015:3000"
+      - "4000:4000"
+
+    # Volume mapping for document uploads
+    volumes:
+      - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/Document:/app/uploads:rw
+      - apas-logs:/app/logs
+
+    # Environment variables
+    environment:
+      # Node environment
+      - NODE_ENV=production
+
+      # Server ports
+      - FRONTEND_PORT=3000
+      - BACKEND_PORT=4000
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+
+      # Database (Supabase PostgreSQL)
+      - DATABASE_URL=${DATABASE_URL}
+
+      # Supabase configuration
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+
+      # AI Services
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENCHAT_API_URL=${OPENCHAT_API_URL}
+
+      # JWT Secret
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+
+      # File upload configuration
+      - UPLOAD_DIR=/app/uploads
+      - MAX_FILE_SIZE=10485760
+
+      # Logging
+      - LOG_LEVEL=info
+
+      # Timezone
+      - TZ=Asia/Seoul
+
+    # Environment file
+    env_file:
+      - .env.production
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Network
+    networks:
+      - apas-network
+
+  # Nginx reverse proxy (optional, for production use)
+  nginx:
+    image: nginx:alpine
+    container_name: apas-nginx
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+      - nginx-cache:/var/cache/nginx
+
+    depends_on:
+      - apas
+
+    networks:
+      - apas-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+# Named volumes
+volumes:
+  apas-logs:
+    driver: local
+  nginx-cache:
+    driver: local
+
+# Network
+networks:
+  apas-network:
+    driver: bridge

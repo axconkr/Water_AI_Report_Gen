@@ -91,7 +91,7 @@ export default function ContentGenerator({ projectId, onContentGenerated }: Cont
       <div className="border-b border-gray-100 pb-4 mb-6">
         <h2 className="text-xl font-bold text-gray-900">📝 계획서 / 보고서 초안 생성</h2>
         <p className="text-sm text-gray-600 mt-1">
-          Claude AI로 전문적인 계획서 및 보고서 초안을 자동 생성합니다
+          AI에 의한 전문적인 계획서 및 보고서 초안을 자동 생성합니다
         </p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
