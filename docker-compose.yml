@@ -1,39 +1,38 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database (Supabase 사용으로 비활성화)
-  # 로컬 PostgreSQL이 필요한 경우 아래 주석 해제
-  # postgres:
-  #   image: postgres:15-alpine
-  #   container_name: apas-postgres
-  #   restart: unless-stopped
-  #
-  #   ports:
-  #     - "5432:5432"
-  #
-  #   environment:
-  #     - POSTGRES_USER=${POSTGRES_USER:-apas}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #     - POSTGRES_DB=${POSTGRES_DB:-apas_db}
-  #     - TZ=Asia/Seoul
-  #
-  #   volumes:
-  #     - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/DB:/var/lib/postgresql/data
-  #
-  #   networks:
-  #     - apas-network
-  #
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apas}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "3"
+  # PostgreSQL Database (로컬)
+  postgres:
+    image: postgres:15-alpine
+    container_name: apas-postgres
+    restart: unless-stopped
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-apas}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-apas_password}
+      - POSTGRES_DB=${POSTGRES_DB:-apas_db}
+      - TZ=Asia/Seoul
+
+    volumes:
+      - /home/centos/SHINHWA_AI/1.AI_Report/Water_AI_Report_Gen/DB:/var/lib/postgresql/data
+
+    networks:
+      - apas-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Main Application
   apas:
@@ -95,12 +94,12 @@ services:
 
     # Environment file
     env_file:
-      - .env.production
+      - .env
 
-    # Supabase 사용으로 로컬 PostgreSQL 의존성 제거
-    # depends_on:
-    #   postgres:
-    #     condition: service_healthy
+    # PostgreSQL 의존성
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     # Health check
     healthcheck:
