@@ -1,6 +1,6 @@
 import mammoth from 'mammoth'
 import PDFParser from 'pdf2json'
-import { PDFParse } from 'pdf-parse'
+import pdfParse from 'pdf-parse'
 
 export interface ParsedDocument {
   text: string
@@ -16,8 +16,7 @@ export interface ParsedDocument {
  */
 export const parsePDF = async (buffer: Buffer): Promise<ParsedDocument> => {
   try {
-    const parser = new PDFParse({ data: buffer })
-    const result = await parser.getText()
+    const result = await pdfParse(buffer)
 
     // Check if text was actually extracted
     if (!result.text || result.text.trim().length === 0) {
@@ -28,7 +27,7 @@ export const parsePDF = async (buffer: Buffer): Promise<ParsedDocument> => {
     return {
       text: result.text,
       metadata: {
-        pages: result.pages.length,
+        pages: result.numpages,
         wordCount: result.text.split(/\s+/).filter((w) => w.length > 0).length,
         charCount: result.text.length,
       },
