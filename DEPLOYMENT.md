@@ -1,13 +1,12 @@
-# APAS CentOS 7 배포 가이드
+# APAS 배포 가이드 (Docker + Supabase)
 
 ## 목차
 
 - [시스템 요구사항](#시스템-요구사항)
-- [사전 준비](#사전-준비)
-- [설치 단계](#설치-단계)
+- [GitHub를 통한 배포](#github를-통한-배포)
 - [환경 설정](#환경-설정)
-- [서비스 실행](#서비스-실행)
-- [프로세스 관리](#프로세스-관리)
+- [배포 실행](#배포-실행)
+- [서비스 관리](#서비스-관리)
 - [트러블슈팅](#트러블슈팅)
 
 ---
@@ -24,90 +23,51 @@
 
 ### 필수 소프트웨어
 
-- Node.js 20.x LTS
-- PostgreSQL 15.x (또는 Supabase 사용)
+- Docker & Docker Compose
 - Git
-- Nginx (프록시 서버)
-- PM2 (프로세스 관리)
+- Supabase 계정 (데이터베이스)
 
 ---
 
-## 사전 준비
+## GitHub를 통한 배포
 
-### 1. 시스템 업데이트
+### 1. 로컬에서 GitHub에 푸시
 
 ```bash
+# 변경사항 커밋 및 푸시
+git add .
+git commit -m "Update configuration for Docker + Supabase deployment"
+git push origin main
+```
+
+### 2. 원격 서버 사전 준비 (최초 1회)
+
+```bash
+# SSH로 원격 서버 접속
+ssh -p 2444 centos@1.236.245.110
+
+# Docker 및 Docker Compose 설치
 sudo yum update -y
-sudo yum install -y epel-release
-sudo yum install -y git wget curl vim
-```
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+sudo systemctl start docker
+sudo systemctl enable docker
 
-### 2. Node.js 20.x 설치
+# Docker Compose 설치
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 
-```bash
-# NodeSource 저장소 추가
-curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+# 현재 사용자를 docker 그룹에 추가
+sudo usermod -aG docker $USER
+# 재로그인 필요
 
-# Node.js 설치
-sudo yum install -y nodejs
+# Git 설치
+sudo yum install -y git
 
-# 버전 확인
-node --version  # v20.x.x
-npm --version   # 10.x.x
-```
-
-### 3. PostgreSQL 15.x 설치 (선택 사항)
-
-#### Supabase 사용 시
-
-- Supabase 클라우드를 사용하는 경우 이 단계를 건너뛰세요.
-
-#### 로컬 PostgreSQL 설치 시
-
-```bash
-# PostgreSQL 15 저장소 추가
-sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-
-# PostgreSQL 15 설치
-sudo yum install -y postgresql15-server postgresql15-contrib
-
-# 초기화
-sudo /usr/pgsql-15/bin/postgresql-15-setup initdb
-
-# 서비스 시작 및 자동 시작 설정
-sudo systemctl start postgresql-15
-sudo systemctl enable postgresql-15
-
-# 데이터베이스 생성
-sudo -u postgres psql
-CREATE DATABASE apas;
-CREATE USER apas_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE apas TO apas_user;
-\q
-```
-
-### 4. PM2 설치 (프로세스 관리)
-
-```bash
-sudo npm install -g pm2
-
-# 시스템 부팅 시 자동 시작 설정
-pm2 startup
-# 출력된 명령어 실행
-```
-
-### 5. Nginx 설치 (리버스 프록시)
-
-```bash
-sudo yum install -y nginx
-
-# 서비스 시작 및 자동 시작 설정
-sudo systemctl start nginx
-sudo systemctl enable nginx
-
-# 방화벽 설정
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
+# 방화벽 포트 열기
+sudo firewall-cmd --permanent --add-port=8020/tcp
+sudo firewall-cmd --permanent --add-port=8021/tcp
 sudo firewall-cmd --reload
 ```
 
