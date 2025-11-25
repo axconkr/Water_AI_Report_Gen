@@ -42,6 +42,10 @@ RUN npm install
 # Copy frontend source
 COPY frontend ./
 
+# Set API URL for build time
+ARG NEXT_PUBLIC_API_URL=http://1.236.245.110:8021/api/v1
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build frontend
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build

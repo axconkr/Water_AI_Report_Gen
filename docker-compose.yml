@@ -39,6 +39,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://1.236.245.110:8021/api/v1}
     container_name: apas-application
     restart: unless-stopped
 
