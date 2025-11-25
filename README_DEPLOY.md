@@ -6,20 +6,13 @@ GitHub → 원격 서버 Pull → Docker 빌드 및 실행
 
 ## 준비사항
 
-### 1. Supabase 설정
-
-1. https://supabase.com 에서 프로젝트 생성
-2. Settings → Database에서 Connection String 복사
-3. Settings → API에서 API Keys 복사:
-   - `anon` `public` key
-   - `service_role` `secret` key
-
-### 2. 원격 서버 요구사항
+### 원격 서버 요구사항
 
 - CentOS 7.x
 - Docker & Docker Compose
 - Git
-- 포트 8020, 8021 개방
+- 포트 8020 (Frontend), 8021 (Backend) 개방
+- PostgreSQL은 Docker로 자동 설치됨
 
 ## 배포 단계
 

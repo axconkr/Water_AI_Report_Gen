@@ -1,7 +1,40 @@
 version: '3.8'
 
 services:
-  # Main Application (Supabase DB only)
+  # PostgreSQL Database (Local)
+  postgres:
+    image: postgres:15-alpine
+    container_name: apas-postgres
+    restart: unless-stopped
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-apas}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-apas_password}
+      - POSTGRES_DB=${POSTGRES_DB:-apas_db}
+      - TZ=Asia/Seoul
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    networks:
+      - apas-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Main Application
   apas:
     build:
       context: .
@@ -24,6 +57,11 @@ services:
     # Environment file
     env_file:
       - .env
+
+    # PostgreSQL dependency
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     # Health check
     healthcheck:
@@ -81,6 +119,8 @@ services:
 
 # Named volumes
 volumes:
+  postgres-data:
+    driver: local
   nginx-cache:
     driver: local
 
