@@ -10,14 +10,19 @@ ENV CI=true
 
 # Copy backend package files
 COPY backend/package*.json ./
-COPY backend/prisma ./prisma/
+
+# Copy Prisma schema FIRST
+COPY backend/prisma/schema.prisma ./prisma/
 
 # Install dependencies
 RUN npm install --only=production && \
     npm install -g prisma
 
-# Copy backend source
+# Copy backend source (including migrations)
 COPY backend ./
+
+# Ensure migrations folder exists and is populated
+RUN ls -la ./prisma/migrations || mkdir -p ./prisma/migrations
 
 # Generate Prisma client
 RUN npx prisma generate

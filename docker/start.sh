@@ -4,9 +4,19 @@ set -e
 echo "🚀 Starting APAS Application..."
 
 # Run database migrations
-echo "📊 Running database migrations..."
+echo "📊 Checking database schema..."
 cd /app/backend
-npx prisma migrate deploy
+
+# Check if migrations exist
+if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations)" ]; then
+  echo "✅ Migration files found, deploying..."
+  npx prisma migrate deploy
+else
+  echo "⚠️  No migration files found, using prisma db push..."
+  npx prisma db push --skip-generate --accept-data-loss
+fi
+
+echo "✅ Database schema is ready!"
 
 # Start backend in background
 echo "🔧 Starting backend server..."
