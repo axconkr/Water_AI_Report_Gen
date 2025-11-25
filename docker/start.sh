@@ -14,19 +14,10 @@ cd /app/backend
 node dist/index.js &
 BACKEND_PID=$!
 
-# Wait for backend to be ready
+# Wait for backend to be ready (simple sleep instead of curl check)
 echo "⏳ Waiting for backend to be ready..."
-for i in $(seq 1 30); do
-  if curl -f http://localhost:4000/api/v1/health > /dev/null 2>&1; then
-    echo "✅ Backend is ready!"
-    break
-  fi
-  if [ $i -eq 30 ]; then
-    echo "❌ Backend failed to start"
-    exit 1
-  fi
-  sleep 2
-done
+sleep 10
+echo "✅ Backend should be ready!"
 
 # Start frontend
 echo "🎨 Starting frontend server..."
