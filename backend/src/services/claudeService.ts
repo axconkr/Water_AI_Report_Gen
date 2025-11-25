@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-const apiKey = process.env.CLAUDE_API_KEY
+const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY
 if (!apiKey) {
-  throw new Error('CLAUDE_API_KEY is not set')
+  throw new Error('ANTHROPIC_API_KEY or CLAUDE_API_KEY is not set')
 }
 
 const anthropic = new Anthropic({
