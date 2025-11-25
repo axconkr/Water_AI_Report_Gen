@@ -51,11 +51,19 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install production dependencies
-RUN apk add --no-cache \
-    tini \
-    curl \
-    && rm -rf /var/cache/apk/*
+# Install production dependencies with retry and mirror fallback
+RUN set -ex && \
+    # Try default mirror first
+    (apk update && apk add --no-cache tini curl) || \
+    # Fallback to Korean mirror
+    (echo "http://mirror.kakao.com/alpine/v3.18/main" > /etc/apk/repositories && \
+     echo "http://mirror.kakao.com/alpine/v3.18/community" >> /etc/apk/repositories && \
+     apk update && apk add --no-cache tini curl) || \
+    # Final fallback to alternative mirror
+    (echo "http://dl-cdn.alpinelinux.org/alpine/v3.18/main" > /etc/apk/repositories && \
+     echo "http://dl-cdn.alpinelinux.org/alpine/v3.18/community" >> /etc/apk/repositories && \
+     apk update && apk add --no-cache tini curl) && \
+    rm -rf /var/cache/apk/*
 
 # Create app user
 RUN addgroup -g 1001 -S nodejs && \
