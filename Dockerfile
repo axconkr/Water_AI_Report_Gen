@@ -42,13 +42,19 @@ RUN npm install
 # Copy frontend source
 COPY frontend ./
 
-# Set API URL for build time
+# Set API URL for build time (MUST be set before build)
 ARG NEXT_PUBLIC_API_URL=http://1.236.245.110:8021/api/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build frontend
-ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm run build
+# Verify environment variable is set
+RUN echo "Building with NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}"
+
+# Build frontend with explicit environment variable
+RUN NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} npm run build
+
+# Verify build output
+RUN echo "Build completed. Checking .next directory..." && ls -la .next/
 
 # Stage 3: Production Runtime
 FROM node:18-alpine
