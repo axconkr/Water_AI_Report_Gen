@@ -2,6 +2,36 @@
 
 AI 기반 외부용역과제 수행계획서 자동 작성 시스템
 
+> **최근 업데이트 (2023-12-23)**: JWT 토큰 만료 시간 연장 (365일), Gemini API → Claude API 전환
+>
+> 📖 상세 작업 로그: [WORK_LOG_20231223.md](./WORK_LOG_20231223.md)
+
+## 📌 중요 공지
+
+### AI Provider 변경 (Gemini → Claude)
+
+Gemini API 할당량 초과 문제로 인해 **Claude API**로 전환되었습니다.
+
+- ✅ **더 안정적인 문서 분석**
+- ✅ **긴 문서 처리 가능** (100,000자 vs 50,000자)
+- ✅ **정확한 JSON 응답**
+
+**설정 방법**:
+
+```env
+AI_PROVIDER=claude
+ANTHROPIC_API_KEY=sk-ant-api03-...
+```
+
+### JWT 토큰 만료 시간 연장
+
+개발 편의를 위해 JWT 토큰 만료 시간이 **365일**로 연장되었습니다.
+
+- Access Token: ~~1시간~~ → **365일**
+- Refresh Token: ~~7일~~ → **365일**
+
+---
+
 ## 프로젝트 개요
 
 한국 공공기관 용역 수행계획서를 AI로 자동 생성하는 웹 기반 시스템입니다.
@@ -148,6 +178,8 @@ tail -f logs/frontend.log
 
 - [PRD (Product Requirements Document)](./PRD.md)
 - [Claude Code 가이드](./CLAUDE.md)
+- [작업 로그 (2023-12-23)](./WORK_LOG_20231223.md)
+- [배포 가이드](./DEPLOYMENT.md)
 
 ## 라이선스
 
