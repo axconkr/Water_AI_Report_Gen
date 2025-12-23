@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h'
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '365d' // 1년 (사실상 무제한)
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your-refresh-secret'
-const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d'
+const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '365d' // 1년 (사실상 무제한)
 
 export interface TokenPayload {
   id: string
