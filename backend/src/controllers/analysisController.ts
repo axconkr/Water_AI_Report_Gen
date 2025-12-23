@@ -1,9 +1,15 @@
 import { Request, Response } from 'express'
 import prisma from '../config/database'
-import { analyzeDocument } from '../services/geminiService'
+import { analyzeDocument as analyzeDocumentGemini } from '../services/geminiService'
+import { analyzeDocument as analyzeDocumentClaude } from '../services/claudeService'
 import { parseDocument } from '../utils/fileParser'
 import fs from 'fs'
 import path from 'path'
+
+// AI provider selection: 'gemini' or 'claude'
+const AI_PROVIDER = process.env.AI_PROVIDER || 'claude'
+
+const analyzeDocument = AI_PROVIDER === 'claude' ? analyzeDocumentClaude : analyzeDocumentGemini
 
 export const analyzeDocumentById = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -125,9 +131,14 @@ export const analyzeDocumentById = async (req: Request, res: Response): Promise<
     }
 
     // Perform AI analysis
+    console.log(`🤖 Starting AI document analysis with ${AI_PROVIDER.toUpperCase()}...`)
+    console.log(`📄 Document text length: ${documentText.length} characters`)
+
     const analysis = await analyzeDocument(documentText)
+    console.log(`✅ AI analysis completed successfully with ${AI_PROVIDER.toUpperCase()}`)
 
     // Save analysis to database
+    console.log('💾 Saving analysis to database...')
     const savedAnalysis = await prisma.documentAnalysis.create({
       data: {
         documentId,
@@ -135,7 +146,7 @@ export const analyzeDocumentById = async (req: Request, res: Response): Promise<
         extractedInfo: analysis.extractedInfo as any,
         keywords: analysis.keywords || [],
         confidenceScore: analysis.confidenceScore || null,
-        aiProvider: 'gemini',
+        aiProvider: AI_PROVIDER,
         tokensUsed: analysis.tokensUsed || null,
       },
     })
@@ -145,13 +156,21 @@ export const analyzeDocumentById = async (req: Request, res: Response): Promise<
       data: { analysis: savedAnalysis },
       message: '문서 분석이 완료되었습니다',
     })
-  } catch (error) {
-    console.error('Analyze document error:', error)
+  } catch (error: any) {
+    console.error('❌ Analyze document error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error message:', error.message)
+
+    // Detailed error response
+    const errorMessage = error.message || '문서 분석 중 오류가 발생했습니다'
+    const errorCode = error.code || 'INTERNAL_SERVER_ERROR'
+
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: '문서 분석 중 오류가 발생했습니다',
+        code: errorCode,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
     })
   }

@@ -2,9 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const apiKey = process.env.GEMINI_API_KEY
 if (!apiKey) {
-  throw new Error('GEMINI_API_KEY is not set')
+  console.error('❌ GEMINI_API_KEY is not set in environment variables')
+  throw new Error('GEMINI_API_KEY is not configured. Please set it in .env file')
 }
 
+console.log('✅ Gemini API initialized with key:', apiKey.substring(0, 10) + '...')
 const genAI = new GoogleGenerativeAI(apiKey)
 
 export interface DocumentAnalysis {
